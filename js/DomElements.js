@@ -7,7 +7,6 @@ class DomElements {
         this.loadAll();
 
         this.addEventToNewTaskForm();
-        this.addEventToShowOperationsInTask();
     }
 
     createTaskElement(task) {
@@ -41,6 +40,7 @@ class DomElements {
         }
 
         this.appElement.appendChild(taskSectionEl);
+        this.addEventToShowOperationsInTask(taskSectionEl)
     }
 
     createOperationElement(operation, taskRelatedToOperation) {
@@ -51,21 +51,24 @@ class DomElements {
         taskRelatedToOperation.appendChild(operationElement);
     }
 
-    addEventToShowOperationsInTask() {
-        let allTasks = document.querySelectorAll(".task");
-        console.log(allTasks);
-        allTasks.forEach(task => addEventListener("click", e => {
-            let taskId = e.currentTarget.dataset.id;
-            let taskUl = e.currentTarget.querySelector(".list-group.todo")
-            console.log("Target task id = " + taskId);
-            this.apiService.getTaskOperations(taskId,
-                operations => {
-                    operations.forEach(operation => this.createOperationElement(operation, taskUl))
-                },
-                error => console.log(error)
-            );
-        }));
-        console.log("addEventToShowOperationsInTask() - done")
+    addEventToShowOperationsInTask(taskElement) {
+        let h2Element = taskElement.firstElementChild;
+        let ulElement = taskElement.querySelector("ul");
+        let taskId = taskElement.dataset.id;
+
+        h2Element.addEventListener("click", e => {
+            if (!h2Element.dataset.operationsLoaded) {
+                this.apiService.getTaskOperations(taskId,
+                    operations => {
+                        operations.forEach(operation => this.createOperationElement(operation, ulElement));
+                        h2Element.dataset.operationsLoaded = "true"
+                    },
+                    error => console.log(error)
+                );
+            }
+        });
+
+
     }
 
     loadAll() {
