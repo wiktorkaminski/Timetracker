@@ -1,6 +1,7 @@
 class ApiService {
     constructor() {
-        this.key = "7086ac35-3824-4ae0-aeae-0be25d3683a0";
+        this.key = "ac51eef9-ce0f-4cfe-a429-50219fb75899"
+        // this.key = "7086ac35-3824-4ae0-aeae-0be25d3683a0";
         this.url = "https://todo-api.coderslab.pl"
     }
 
@@ -68,7 +69,7 @@ class ApiService {
     deleteTask(taskId, successCallbackFn, errorCallbackFn) {
         fetch(this.url + "/api/tasks/" + taskId,
             {
-                headers: {Authorisation: this.key, "Content-Type": "application/json"},
+                headers: {Authorization: this.key},
                 method: "DELETE"
             })
             .then(response => response.json())
@@ -166,7 +167,7 @@ class ApiService {
     deleteOperation(operationId, successCallbackFn, errorCallbackFn){
         fetch(this.url + "/api/operations/" + operationId,
             {
-                headers: {Authorization: this.key, "Content-type": "application/json"},
+                headers: {Authorization: this.key},
                 method: "DELETE"
             })
             .then(response => response.json())
