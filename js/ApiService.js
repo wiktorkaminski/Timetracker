@@ -171,8 +171,8 @@ class ApiService {
                 method: "DELETE"
             })
             .then(response => response.json())
-            .then(responseData => console.log(responseData))
-            .catch(error => console.log(error));
+            .then(responseData => successCallbackFn(responseData))
+            .catch(error => errorCallbackFn(error));
     }
 
 

@@ -51,13 +51,23 @@ class DomElements {
         operationElement.dataset.id = operation.id;
         operationElement.innerText = operation.description;
 
+        let deleteButton = document.createElement("a");
+        deleteButton.classList.add("btn", "btn-primary", "float-right");
+        deleteButton.innerText = "X";
+        deleteButton.style.backgroundColor = "red";
+        deleteButton.style.borderColor = "red"
+        this.addEventDeleteOperation(deleteButton);
+        operationElement.appendChild(deleteButton);
+
         let addTimeButton = document.createElement("a");
         addTimeButton.classList.add("btn", "btn-primary", "float-right");
         addTimeButton.innerText = "Add time manually";
+        addTimeButton.style.color = "white";
         this.addEventToShowTimeInput(addTimeButton);
         operationElement.appendChild(addTimeButton);
 
-        taskRelatedToOperation.appendChild(operationElement);
+
+        taskRelatedToOperation.insertBefore(operationElement, taskRelatedToOperation.children[1]);
     }
 
     loadAll() {
@@ -69,7 +79,6 @@ class DomElements {
             },
             error => console.log(error)
         );
-        console.log("loadAll done")
     }
 
     addEventToShowOperationsInTask(taskElement) {
@@ -106,7 +115,6 @@ class DomElements {
                 error => console.log(error)
             );
         });
-        console.log("addEventToNewTaskForm() - done")
     }
 
     addEventToShowNewOperationForm() {
@@ -168,8 +176,8 @@ class DomElements {
 
                 this.apiService.saveTaskOperation(taskId, operation,
                     operation => {
-                    this.createOperationElement(operation, taskUl)
-                    this.removeOperationForm(currentElement.parentElement.parentElement);
+                        this.createOperationElement(operation, taskUl)
+                        this.removeOperationForm(currentElement.parentElement.parentElement);
                     },
                     error => console.log(error)
                 );
@@ -187,6 +195,8 @@ class DomElements {
             let saveTimeButton = document.createElement("a");
             saveTimeButton.classList.add("btn", "btn-primary", "float-right");
             saveTimeButton.innerText = "Save";
+            saveTimeButton.style.backgroundColor = "#FCC777"
+            saveTimeButton.style.borderColor = "#FCC777"
             elementLi.appendChild(saveTimeButton);
 
             this.addEventToSaveTimeInOperation(saveTimeButton);
@@ -196,6 +206,7 @@ class DomElements {
             timeInput.name = "time";
             timeInput.placeholder = "Type in spend time";
             elementLi.appendChild(timeInput);
+
         })
 
     }
@@ -224,6 +235,18 @@ class DomElements {
             this.addEventToShowTimeInput(addTimeButton);
 
         });
+    }
+
+    addEventDeleteOperation(deleteButton) {
+        deleteButton.addEventListener("click", e => {
+            e.stopPropagation();
+            this.apiService.deleteOperation(e.target.parentElement.dataset.id,
+                function () {
+                    e.target.parentElement.parentElement.removeChild(deleteButton.parentElement)
+                },
+                error => console.log(error)
+            );
+        })
     }
 
 
