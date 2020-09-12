@@ -55,7 +55,8 @@ class ApiService {
                 headers: {Authorization: this.key, "Content-type": "application/json"},
                 method: "PUT",
                 body: JSON.stringify(task)
-            }).then(response => response.json()).then(
+            })
+            .then(response => response.json()).then(
             responseData => {
                 if (typeof successCallbackFn === "function") {
                     successCallbackFn(responseData);
@@ -64,9 +65,12 @@ class ApiService {
         ).catch(error => errorCallbackFn(error));
     }
 
-    deleteTask (taskId, successCallbackFn, errorCallbackFn) {
+    deleteTask(taskId, successCallbackFn, errorCallbackFn) {
         fetch(this.url + "/api/tasks/" + taskId,
-            {headers: {Authorisation: this.key, "Content-Type": "application/json"}, method: "DELETE"})
+            {
+                headers: {Authorisation: this.key, "Content-Type": "application/json"},
+                method: "DELETE"
+            })
             .then(response => response.json())
             .then(responseData => successCallbackFn(responseData))
             .catch(error => {
@@ -76,16 +80,100 @@ class ApiService {
             })
     }
 
-    getTaskWithOperations(taskId, successCallbackFn, errorCallbackFn) {
+    getTaskOperations(taskId, successCallbackFn, errorCallbackFn) {
         fetch(this.url + "/api/tasks/" + taskId + "/operations",
-            {headers: {Authorization: this.key, "Content-type": "application/json"}, method: "GET"})
+            {
+                headers: {Authorization: this.key, "Content-type": "application/json"},
+                method: "GET"
+            })
             .then(response => response.json())
-            .then(responseData => console.log(responseData))
+            .then(responseData => {
+                let tempOperations = [];
+                responseData.data.forEach(element => {
+                    tempOperations.push(this.createOperationFromResponseData(element));
+                    element.id = responseData.id;
+                })
+                successCallbackFn(tempOperations);
+            })
+            .catch(error => {
+                    if (typeof errorCallbackFn === "function") {
+                        errorCallbackFn(error);
+                    }
+                }
+            )
+    }
+
+    saveTaskOperation(taskId, operation, successCallbackFn, errorCallbackFn) {
+        fetch(this.url + "/api/tasks/" + taskId + "/operations",
+            {
+                headers: {Authorization: this.key, "Content-type": "application/json"},
+                method: "POST",
+                body: JSON.stringify(operation)
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                if (typeof successCallbackFn === "function") {
+                    let tempOperation = this.createOperationFromResponseData(responseData.data)
+                    successCallbackFn(tempOperation);
+                }
+            }).catch(error => {
+            if (typeof errorCallbackFn === "function") {
+                errorCallbackFn(error);
+            }
+        })
+    }
+
+    getOperation(operationId, successCallbackFn, errorCallbackFn) {
+        fetch(this.url + "/api/operations/" + operationId,
+            {
+                headers: {Authorization: this.key, "Content-type": "application/json"},
+                method: "GET"
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                if (typeof successCallbackFn === "function") {
+                    let operation = this.createOperationFromResponseData(responseData.data)
+                    successCallbackFn(operation);
+                }
+            })
             .catch(error => {
                 if (typeof errorCallbackFn === "function") {
                     errorCallbackFn(error);
-                }}
-    )}
+                }
+            })
+    }
+
+    modifyOperation(operation, successCallbackFn, errorCallbackFn) {
+        fetch(this.url + "/api/operations/" + operation.id,
+            {
+                headers: {Authorization: this.key, "Content-type": "application/json"},
+                method: "PUT",
+                body: JSON.stringify(operation)
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                if (typeof successCallbackFn === "function") {
+                    let operation = this.createOperationFromResponseData(responseData.data)
+                    successCallbackFn(operation);
+                }
+            }).catch(error => {
+            if (typeof errorCallbackFn === "function") {
+                errorCallbackFn(error);
+            }
+        });
+    }
+
+    deleteOperation(operationId, successCallbackFn, errorCallbackFn){
+        fetch(this.url + "/api/operations/" + operationId,
+            {
+                headers: {Authorization: this.key, "Content-type": "application/json"},
+                method: "DELETE"
+            })
+            .then(response => response.json())
+            .then(responseData => console.log(responseData))
+            .catch(error => console.log(error));
+    }
+
 
     createTaskFromResponseData(data) {
         if (data.id) {
@@ -95,5 +183,14 @@ class ApiService {
             }
             return task;
         }
+    }
+
+    createOperationFromResponseData(data) {
+        if (data.id) {
+            const operation = new Operation(data.description, data.timeSpent);
+            operation.id = data.id;
+            return operation;
+        }
+
     }
 }
