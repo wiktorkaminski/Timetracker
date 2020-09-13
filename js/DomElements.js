@@ -51,6 +51,16 @@ class DomElements {
         operationElement.dataset.id = operation.id;
         operationElement.innerText = operation.description;
 
+        if (operation.timeSpent !== 0) {
+            let spentTimePile = document.createElement("span");
+            spentTimePile.classList.add("badge", "badge-primary", "badge-pill");
+            spentTimePile.style.marginLeft = "5px";
+            let minutes = operation.timeSpent % 60;
+            let spentTimeToString = (operation.timeSpent - minutes) / 60 + "h " + (minutes) + "min";
+            spentTimePile.innerText = "Total time spent: " + spentTimeToString;
+            operationElement.appendChild(spentTimePile);
+        }
+
         let deleteButton = document.createElement("a");
         deleteButton.classList.add("btn", "btn-primary", "float-right");
         deleteButton.innerText = "X";
@@ -65,7 +75,6 @@ class DomElements {
         addTimeButton.style.color = "white";
         this.addEventToShowTimeInput(addTimeButton);
         operationElement.appendChild(addTimeButton);
-
 
         taskRelatedToOperation.insertBefore(operationElement, taskRelatedToOperation.children[1]);
     }
@@ -216,14 +225,36 @@ class DomElements {
             e.stopPropagation();
             let elementLi = saveTimeButton.parentElement;
             let timeToAdd = saveTimeButton.nextElementSibling.value === "" ? 0 : Number(saveTimeButton.nextElementSibling.value);
+            let spentTime = 0;
+            let spentTimeToString = "";
 
             this.apiService.getOperation(elementLi.dataset.id,
                 operation => {
                     operation.timeSpent += timeToAdd;
-                    this.apiService.modifyOperation(operaton);
+                    spentTime = operation.timeSpent;
+                    this.apiService.modifyOperation(operation);
+
+                    let minutes = operation.timeSpent % 60;
+                    spentTimeToString += ((operation.timeSpent - minutes) / 60 + "h " + minutes + "min");
+                    console.log(spentTimeToString);
                 },
                 error => console.log(error)
             );
+            console.log(spentTimeToString);
+
+            let timePile = elementLi.querySelector("span");
+            if (timePile) {
+                timePile.innerText = spentTimeToString;
+                // elementLi.insertBefore(timePile, elementLi.firstElementChild);
+                console.log("był span")
+            } else {
+                console.log("nie było span")
+                let spentTimePile = document.createElement("span");
+                spentTimePile.classList.add("badge", "badge-primary", "badge-pill");
+                spentTimePile.style.marginLeft = "5px";
+                spentTimeToString.innerText = spentTimeToString;
+                elementLi.insertBefore(spentTimePile, elementLi.firstElementChild);
+            }
 
             elementLi.removeChild(saveTimeButton.nextElementSibling);
             elementLi.removeChild(saveTimeButton);
@@ -231,9 +262,9 @@ class DomElements {
             let addTimeButton = document.createElement("a");
             addTimeButton.classList.add("btn", "btn-primary", "float-right");
             addTimeButton.innerText = "Add time manually";
+            addTimeButton.style.color = "white";
             elementLi.appendChild(addTimeButton);
             this.addEventToShowTimeInput(addTimeButton);
-
         });
     }
 
