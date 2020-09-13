@@ -15,6 +15,7 @@ class DomElements {
         let taskSectionEl = document.createElement("section");
         taskSectionEl.classList.add("task");
         taskSectionEl.dataset.id = task.id;
+        taskSectionEl.dataset.status = task.status;
 
         let taskHeaderEl = document.createElement("h2");
         taskHeaderEl.innerText = task.title;
@@ -34,11 +35,21 @@ class DomElements {
             finishBtn.classList.add("btn", "btn-secondary", "float-right", "close-task");
             finishBtn.innerText = "Finish";
             taskListItem.appendChild(finishBtn);
+            this.addEventToFinishTask(finishBtn)
 
             let addOperationBtn = document.createElement("a");
             addOperationBtn.classList.add("btn", "btn-secondary", "float-right", "add-operation");
             addOperationBtn.innerText = "Add operation";
             taskListItem.appendChild(addOperationBtn);
+
+        } else {
+            let deleteButton = document.createElement("a");
+            deleteButton.classList.add("btn", "btn-primary", "float-right");
+            deleteButton.innerText = "Delete me!";
+            deleteButton.style.backgroundColor = "red";
+            deleteButton.style.borderColor = "red"
+            this.addEventDeleteTask(deleteButton);
+            taskListItem.appendChild(deleteButton);
         }
 
         this.appElement.appendChild(taskSectionEl);
@@ -61,20 +72,22 @@ class DomElements {
             operationElement.appendChild(spentTimePile);
         }
 
-        let deleteButton = document.createElement("a");
-        deleteButton.classList.add("btn", "btn-primary", "float-right");
-        deleteButton.innerText = "X";
-        deleteButton.style.backgroundColor = "red";
-        deleteButton.style.borderColor = "red"
-        this.addEventDeleteOperation(deleteButton);
-        operationElement.appendChild(deleteButton);
+        if (taskRelatedToOperation.parentElement.dataset.status === "open") {
+            let deleteButton = document.createElement("a");
+            deleteButton.classList.add("btn", "btn-primary", "float-right");
+            deleteButton.innerText = "X";
+            deleteButton.style.backgroundColor = "red";
+            deleteButton.style.borderColor = "red"
+            this.addEventDeleteOperation(deleteButton);
+            operationElement.appendChild(deleteButton);
 
-        let addTimeButton = document.createElement("a");
-        addTimeButton.classList.add("btn", "btn-primary", "float-right");
-        addTimeButton.innerText = "Add time manually";
-        addTimeButton.style.color = "white";
-        this.addEventToShowTimeInput(addTimeButton);
-        operationElement.appendChild(addTimeButton);
+            let addTimeButton = document.createElement("a");
+            addTimeButton.classList.add("btn", "btn-primary", "float-right");
+            addTimeButton.innerText = "Add time manually";
+            addTimeButton.style.color = "white";
+            this.addEventToShowTimeInput(addTimeButton);
+            operationElement.appendChild(addTimeButton);
+        }
 
         taskRelatedToOperation.insertBefore(operationElement, taskRelatedToOperation.children[1]);
     }
@@ -211,7 +224,7 @@ class DomElements {
             this.addEventToSaveTimeInOperation(saveTimeButton);
             let timeInput = document.createElement("input");
             timeInput.classList.add("float-right");
-            timeInput.type = "text";
+            timeInput.type = "number";
             timeInput.name = "time";
             timeInput.placeholder = "Type in spend time";
             elementLi.appendChild(timeInput);
@@ -224,47 +237,38 @@ class DomElements {
         saveTimeButton.addEventListener("click", e => {
             e.stopPropagation();
             let elementLi = saveTimeButton.parentElement;
-            let timeToAdd = saveTimeButton.nextElementSibling.value === "" ? 0 : Number(saveTimeButton.nextElementSibling.value);
-            let spentTime = 0;
-            let spentTimeToString = "";
-
             this.apiService.getOperation(elementLi.dataset.id,
                 operation => {
-                    operation.timeSpent += timeToAdd;
-                    spentTime = operation.timeSpent;
-                    this.apiService.modifyOperation(operation);
+                    let timeToAdd = saveTimeButton.nextElementSibling.value === "" ? 0 : Number(saveTimeButton.nextElementSibling.value);
+                    let spentTimeToString = "";
 
+                    operation.timeSpent += timeToAdd;
                     let minutes = operation.timeSpent % 60;
-                    spentTimeToString += ((operation.timeSpent - minutes) / 60 + "h " + minutes + "min");
-                    console.log(spentTimeToString);
+                    spentTimeToString = spentTimeToString + (operation.timeSpent - minutes) / 60 + "h " + minutes + "min";
+                    this.apiService.modifyOperation(operation);
+                    let timePile = elementLi.querySelector("span");
+
+                    if (timePile) {
+                        timePile.innerText = "Total time spent: " + spentTimeToString;
+                    } else {
+                        let spentTimePile = document.createElement("span");
+                        spentTimePile.classList.add("badge", "badge-primary", "badge-pill");
+                        spentTimePile.style.marginLeft = "5px";
+                        spentTimePile.innerText = "Total time spent: " + spentTimeToString;
+                        elementLi.insertBefore(spentTimePile, elementLi.firstElementChild);
+                    }
+                    elementLi.removeChild(saveTimeButton.nextElementSibling);
+                    elementLi.removeChild(saveTimeButton);
+
+                    let addTimeButton = document.createElement("a");
+                    addTimeButton.classList.add("btn", "btn-primary", "float-right");
+                    addTimeButton.innerText = "Add time manually";
+                    addTimeButton.style.color = "white";
+                    elementLi.appendChild(addTimeButton);
+                    this.addEventToShowTimeInput(addTimeButton);
                 },
                 error => console.log(error)
             );
-            console.log(spentTimeToString);
-
-            let timePile = elementLi.querySelector("span");
-            if (timePile) {
-                timePile.innerText = spentTimeToString;
-                // elementLi.insertBefore(timePile, elementLi.firstElementChild);
-                console.log("był span")
-            } else {
-                console.log("nie było span")
-                let spentTimePile = document.createElement("span");
-                spentTimePile.classList.add("badge", "badge-primary", "badge-pill");
-                spentTimePile.style.marginLeft = "5px";
-                spentTimeToString.innerText = spentTimeToString;
-                elementLi.insertBefore(spentTimePile, elementLi.firstElementChild);
-            }
-
-            elementLi.removeChild(saveTimeButton.nextElementSibling);
-            elementLi.removeChild(saveTimeButton);
-
-            let addTimeButton = document.createElement("a");
-            addTimeButton.classList.add("btn", "btn-primary", "float-right");
-            addTimeButton.innerText = "Add time manually";
-            addTimeButton.style.color = "white";
-            elementLi.appendChild(addTimeButton);
-            this.addEventToShowTimeInput(addTimeButton);
         });
     }
 
@@ -278,6 +282,46 @@ class DomElements {
                 error => console.log(error)
             );
         })
+    }
+
+    addEventDeleteTask(deleteButton) {
+        deleteButton.addEventListener("click", e => {
+            e.stopPropagation();
+            this.apiService.deleteTask(e.target.parentElement.parentElement.parentElement.dataset.id,
+                function () {
+                    e.target.parentElement.parentElement.parentElement.parentElement.removeChild(e.target.parentElement.parentElement.parentElement)
+                },
+                error => console.log(error)
+            );
+        })
+    }
+
+    addEventToFinishTask(finishButton) {
+        finishButton.addEventListener("click", e => {
+            e.stopPropagation();
+            const ulElement = finishButton.parentElement.parentElement;
+            const ulChildren = ulElement.children;
+
+            for (let i = 0; i < ulChildren.length; i++) {
+                const anchors = ulChildren[i].querySelectorAll("a");
+                for (let j = 0; j < anchors.length; j++) {
+                    ulChildren[i].removeChild(anchors[j]);
+                }
+            }
+            const task = ulElement.parentElement;
+            const taskId = task.dataset.id;
+
+            this.apiService.getTasks(tasks => {
+                    for (let i = 0; i < tasks.length; i++) {
+                        if (tasks[i].id === taskId) {
+                            tasks[i].status = "closed";
+                            this.apiService.modifyTask(tasks[i], null, error => console.log(error));
+                        }
+                    }
+                    task.dataset.status = "closed";
+                },
+                error => console.log(error));
+        });
     }
 
 
