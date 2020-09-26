@@ -34,6 +34,7 @@ class DomElements {
             let finishBtn = document.createElement("a");
             finishBtn.classList.add("btn", "btn-secondary", "float-right", "close-task");
             finishBtn.innerText = "Finish";
+            finishBtn.style.marginLeft = "5px";
             taskListItem.appendChild(finishBtn);
             this.addEventToFinishTask(finishBtn)
 
@@ -77,7 +78,8 @@ class DomElements {
             deleteButton.classList.add("btn", "btn-primary", "float-right");
             deleteButton.innerText = "X";
             deleteButton.style.backgroundColor = "red";
-            deleteButton.style.borderColor = "red"
+            deleteButton.style.borderColor = "red";
+            deleteButton.style.marginLeft = "3px";
             this.addEventDeleteOperation(deleteButton);
             operationElement.appendChild(deleteButton);
 
@@ -85,8 +87,18 @@ class DomElements {
             addTimeButton.classList.add("btn", "btn-primary", "float-right");
             addTimeButton.innerText = "Add time manually";
             addTimeButton.style.color = "white";
+            addTimeButton.style.marginLeft = "3px";
             this.addEventToShowTimeInput(addTimeButton);
             operationElement.appendChild(addTimeButton);
+
+            let timerButton = document.createElement("button");
+            timerButton.innerText = "Start timer";
+            timerButton.classList.add("btn", "btn-primary", "float-right");
+            timerButton.dataset.status = "off";
+            timerButton.style.color = "white";
+            timerButton.style.marginLeft = "3px"
+            this.addEventToTimerButton(timerButton);
+            operationElement.appendChild(timerButton);
         }
 
         taskRelatedToOperation.insertBefore(operationElement, taskRelatedToOperation.children[1]);
@@ -321,6 +333,67 @@ class DomElements {
                     task.dataset.status = "closed";
                 },
                 error => console.log(error));
+        });
+    }
+
+    addEventToTimerButton(timerButton) {
+        timerButton.addEventListener("click", e => {
+            e.stopPropagation();
+            let li = timerButton.parentElement;
+
+            if (timerButton.dataset.status === "off") {
+                const counter = 0;
+                let timer = document.createElement("span");
+                timer.classList.add("btn", "btn-warning", "float-right", "timer");
+                timer.dataset.time = "0";
+                timer.innerText = "0h 0min 0s";
+                li.appendChild(timer);
+
+                const timerInterval = setInterval(function () {
+                    let currentTime = Number(timer.dataset.time) + 1;
+                    timer.dataset.time = currentTime;
+                    let hours = (currentTime - (currentTime % 3600)) / 3600;
+                    let minutes = ((currentTime - (hours * 3600)) - currentTime % 60) / 60;
+                    let seconds = (currentTime - ((hours * 3600) + (minutes * 60)));
+                    timer.innerText = hours + "h " + minutes + "min " + seconds + "s"
+                }, 1000);
+
+                timer.dataset.intervalId = timerInterval;
+                timerButton.dataset.status = "on";
+                timerButton.innerText = "Stop timer"
+            } else {
+                let timer = li.querySelector(".timer");
+                clearInterval(timer.dataset.intervalId);
+                timerButton.dataset.status = "off"
+                timerButton.innerText = "Start timer"
+
+                let currentTimeInMins = Math.ceil(Number(timer.dataset.time) / 60);
+
+                this.apiService.getOperation(li.dataset.id,
+                    operation => {
+                        operation.timeSpent += currentTimeInMins;
+                        this.apiService.modifyOperation(operation, modifiedOperation => {
+                                let minutes = modifiedOperation.timeSpent % 60;
+                                let spentTimeToString = (modifiedOperation.timeSpent - minutes) / 60 + "h " + minutes + "min";
+                                let timePile = li.querySelector("span");
+
+                                if (timePile) {
+                                    timePile.innerText = "Total time spent: " + spentTimeToString;
+                                } else {
+                                    let spentTimePile = document.createElement("span");
+                                    spentTimePile.classList.add("badge", "badge-primary", "badge-pill");
+                                    spentTimePile.style.marginLeft = "5px";
+                                    spentTimePile.innerText = "Total time spent: " + spentTimeToString;
+                                    li.insertBefore(spentTimePile, li.firstElementChild);
+                                }
+                            },
+                            error => console.log(error));
+                    },
+                    error => console.log(error));
+
+                li.removeChild(timer);
+
+            }
         });
     }
 
